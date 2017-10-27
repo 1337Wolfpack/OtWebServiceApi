@@ -1,6 +1,8 @@
 import xml.etree.ElementTree as ET
-from collections import namedtuple
-from ot_field import *
+#from collections import namedtuple
+from ot_field import ot_field, ObjectId, StringVal, ReferenceVal,\
+    DateTimeVal, ReferenceToUserVal
+
 import requests
 import platform
 import dateutil.parser
@@ -17,7 +19,7 @@ url = "http://otrcsl01.rcsl.lu/otws/v1.asmx"
 class otQuery():
     def __init__(self):
         self.body = ""
-        self.xml = ""
+        self.xml = r""
         self.command = ""
         self.result = ""
         self.success = False
@@ -36,10 +38,8 @@ class otQuery():
                    % (self.body, self.command)
 
     def sendQuery(self):
-        result = requests.post(url, data=self.xml.decode(Encoding)
-                               .encode("ascii", "xmlcharrefreplace")
-                               .replace(r'\r\n', '&#x000d;&#x000a;'),
-                               headers=self.headers)
+        data = self.xml.replace(r'\r\n', r'&#x000d;&#x000a;').encode("ascii", "xmlcharrefreplace")
+        result = requests.post(url, data=data, headers=self.headers)
         self.xml_result = result.content
         return self
 
@@ -73,7 +73,7 @@ class otQuery():
             self.result = True
             root = root[0]
             item.id = root.attrib['id']
-            for property, value in vars(item).iteritems():
+            for property, value in vars(item).items():
                 if isinstance(value, ot_field):
                     properties = root.findall(".//*[@name='%s']" % value.name)
                     if len(properties) > 0:
@@ -95,7 +95,7 @@ class otQuery():
         self.command = "GetObjectList"
         self.body = r'%s<Get folderPath="%s" recursive="true"><ObjectIDs objectIDs="%s"/>'\
             % (self.body, item.folder, id)
-        for property, value in vars(self).iteritems():
+        for property, value in vars(self).items():
             if isinstance(value, ot_field) and value.name != "objectId":
                 self.body = r'%s<RequiredField>%s</RequiredField>' \
                 % (self.body, value.name)
@@ -108,7 +108,7 @@ class otQuery():
 
     def convAttributeforPython(self, field, value):
         if isinstance(field, DateTimeVal):
-            print("conving " + value)
+            print("converting " + value)
             return dateutil.parser.parse(value)
         else:
             return field.value
@@ -180,7 +180,8 @@ class otQuery():
         self.initQuery()
         self.sendQuery()
         tree = ET.fromstring(self.xml_result)
-        root = tree.find('*//{http://www.omninet.de/OtWebSvc/v1}RemoveObjectResult')
+        root = tree\
+            .find('*//{http://www.omninet.de/OtWebSvc/v1}RemoveObjectResult')
         if root.attrib['success'] == "true":
             self.result = True
         else:
