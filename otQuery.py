@@ -6,14 +6,28 @@ from ot_field import ot_field, ObjectId, StringVal, ReferenceVal,\
 import requests
 import platform
 import dateutil.parser
+import os
+
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "OtWebServiceApi.settings")
+import django
+django.setup()
+from ot_webservice_api.models import Ot_config
+config = Ot_config.objects.all()[0]
+url = config.url
+
 
 
 if platform.system() == "Windows":
     Encoding = "cp437"
 else:
     Encoding = "utf-8"
+    
+    
 
-url = "http://otrcsl01.rcsl.lu/otws/v1.asmx"
+
+
+
 
 
 class otQuery():
@@ -88,6 +102,7 @@ class otQuery():
 
         return item
 
+
     def get(self, item, id):
         if item.id != "":
             id = item.id
@@ -105,13 +120,89 @@ class otQuery():
         self.sendQuery()
         item = self.buildObject(item)
         return item
+    
+    
+
+    
+    
+    def getObjectList(self, objectclass, filter, variables):
+        self.body = ""
+
+        item=objectclass()
+        self.command = "GetObjectList"
+        self.body = r'%s<Get folderPath="%s" recursive="true">' \
+        % (self.body, item.folder)
+        if filter != "":
+        
+            self.body = '%s<Filter>%s' % (self.body, filter)
+            filterVars = ''
+            for variable in variables:
+                filterVars =  '%s<%s name="%s">%s</%s>' % (filterVars, 'StringVal', variable[0], variable[1], 'StringVal')
+            self.body = '%s%s</Filter>' % (self.body, filterVars)
+        
+    
+        RequiredFields = []
+        
+        
+        #for key, value in vars(item).items():
+        #    if isinstance(value, ot_field) and value.name != "objectId":
+        #        RequiredFields.append(value)
+        
+        
+         
+        
+        
+        #<Filter>EventUCID<StringVal name="UCID">%s</StringVal></Filter>
+        for field in RequiredFields:
+            self.body = r'%s<RequiredField>%s</RequiredField>' \
+            % (self.body, field.name)
+        self.body = "%s</Get>" % (self.body)
+        self.initQuery()
+        self.sendQuery()
+        
+        
+        result = self.buildobjects(objectclass)
+        #print(self.xml)
+        return result
+    
+    def buildobjects(self, objectclass):
+        results = []
+        tree = ET.fromstring(self.xml_result)
+        print(self.xml_result)
+        root = tree \
+            .find('*//{http://www.omninet.de/OtWebSvc/v1}GetObjectListResult')
+        if root.attrib['success'] == "true":
+            for child in root:
+                item = objectclass()
+                #ET.dump(child)
+                item.id = child.attrib['id']
+                if item.id == "44620":
+                    ET.dump(child)
+                for property, value in vars(item).items():
+                    if isinstance(value, ot_field):
+                        properties = child.findall(".//*[@name='%s']" % value.name)
+                        #print('finding field %s' % value.name)
+                        #print (properties)
+                        if len(properties) > 0:
+                            var = properties[0]
+                            value.value = self.\
+                                convAttributeforPython(value,
+                                                       value.getValueFromXML(var))
+                            #print (value.value)
+            
+                results.append(item)
+            
+        return results
+    
+    
+    
 
     def convAttributeforPython(self, field, value):
         if isinstance(field, DateTimeVal):
-            print("converting " + value)
+            #print("converting " + value)
             return dateutil.parser.parse(value)
         else:
-            return field.value
+            return value
 
     def convAttributeforOT(self, field):
         if isinstance(field, DateTimeVal):
@@ -143,7 +234,7 @@ class otQuery():
                 return field.getValueFromXML(properties[0])
         else:
 
-            print("couldn't build complete query : %s : %s" % (item,field))
+            print("couldn't build complete query : %s : %s" % (item, field))
             print("request : %s" % self.xml)
             print("response : %s" % self.xml_result)
 
@@ -155,7 +246,7 @@ class otQuery():
         self.command = "ModifyObject"
         self.body = r'%s<Object objectId="%s">' % (self.body, item.id)
         self.body = r'%s<%s name="%s">%s</%s>' \
-        % (self.body, field.fieldtype, field.name, value, field.fieldtype)
+            % (self.body, field.fieldtype, field.name, value, field.fieldtype)
         self.body = "%s</Object>" % (self.body)
         self.initQuery()
         self.sendQuery()
@@ -176,7 +267,7 @@ class otQuery():
         self.body = ""
         self.command = "RemoveObject"
         self.body = r'%s<ObjectID>%s</ObjectID><IgnoreReferences>true</IgnoreReferences>' \
-        % (self.body, id)
+            % (self.body, id)
         self.initQuery()
         self.sendQuery()
         tree = ET.fromstring(self.xml_result)

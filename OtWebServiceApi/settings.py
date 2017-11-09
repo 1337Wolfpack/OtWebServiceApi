@@ -25,7 +25,7 @@ SECRET_KEY = 'bs1nf0f17p@43-zhyqzc+(4-z&7gt^q))bi%dt)w_7_5k9#tbq'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['148.110.107.15']
 
 
 # Application definition
@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'ot_webservice_api.apps.OtWebserviceApiConfig'
 ]
 
 
