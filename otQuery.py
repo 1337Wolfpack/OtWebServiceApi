@@ -245,7 +245,11 @@ class otQuery():
         self.body = ""
         self.command = "ModifyObject"
         self.body = r'%s<Object objectId="%s">' % (self.body, item.id)
-        self.body = r'%s<%s name="%s">%s</%s>' \
+        
+        if field.fieldtype == "ReferenceToUserVal":
+            self.body = r'%s%s' % (self.body, field.fieldXMLString())
+        else:
+            self.body = r'%s<%s name="%s">%s</%s>' \
             % (self.body, field.fieldtype, field.name, value, field.fieldtype)
         self.body = "%s</Object>" % (self.body)
         self.initQuery()

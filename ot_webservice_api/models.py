@@ -25,22 +25,8 @@ class Agent(models.Model):
         
 class AgentAdmin(admin.ModelAdmin):
     list_display = ('displayname', 'first_name', 'last_name', 'phone', 'is_helpdesk')
-  
-class Call(models.Model):
-    ucid = models.CharField(max_length=200, unique=True)
-    state = models.CharField(max_length=200,null = True)
-    origin = models.CharField(max_length=200,null = True)
-    destination = models.CharField(max_length=200,null = True)
-    call_type = models.CharField(max_length=200,null = True)
-    start = models.DateTimeField(max_length=200,null = True)
-    end = models.DateTimeField(max_length=200,null = True)
-    history=models.CharField(max_length=600, null = True)
-    agent = models.ForeignKey(Agent,null = True)
-    
-    def __str__(self):
-        return self.ucid
-        
-        
+
+
 class Ticket(models.Model):
     title = models.CharField(max_length=200)
     number = models.CharField(max_length=200)
@@ -51,22 +37,44 @@ class Ticket(models.Model):
     ot_id = models.CharField(max_length=200)
     
     def __str__(self):
-        return self.title
-        
-        
+        return self.title  
+  
 class Event(models.Model):
-    ucid = models.CharField(max_length=200)
-    state = models.CharField(max_length=200)
-    origin = models.CharField(max_length=200)
-    destination = models.CharField(max_length=200)
-    start = models.DateTimeField(max_length=200)
-    end = models.DateTimeField(max_length=200)
-    ticket = models.ForeignKey(Ticket)
-    applicant = models.ForeignKey(Agent, related_name = 'event_applicant')
-    responsible = models.ForeignKey(Agent, related_name = 'event_responsible')
+    ucid = models.CharField(max_length=200, unique=True)
+    state = models.CharField(max_length=200, null = True)
+    origin = models.CharField(max_length=200, null = True)
+    destination = models.CharField(max_length=200, null = True)
+    history = models.CharField(max_length=200, null = True)
+    start = models.DateTimeField(max_length=200, null = True)
+    end = models.DateTimeField(max_length=200, null = True)
+    ticket = models.ForeignKey(Ticket, null = True)
+    applicant = models.ForeignKey(Agent, related_name = 'event_applicant', null = True)
+    responsible = models.ForeignKey(Agent, related_name = 'event_responsible', null = True)
+    event_type = models.CharField(max_length=200, null = True)
     ot_id = models.CharField(max_length=200)
-    event = models.ForeignKey(Call)
+ 
     
     def __str__(self):
-        return self.UCID
+        return self.ucid
+        
+class EventAdmin(admin.ModelAdmin):
+    list_display = ('ucid', 'origin', 'start', 'applicant', 'ot_id', 'event_type')  
+
+class Call(models.Model):
+    ucid = models.CharField(max_length=200, unique=True)
+    state = models.CharField(max_length=200,null = True)
+    origin = models.CharField(max_length=200,null = True)
+    destination = models.CharField(max_length=200,null = True)
+    call_type = models.CharField(max_length=200,null = True)
+    start = models.DateTimeField(max_length=200,null = True)
+    end = models.DateTimeField(max_length=200,null = True)
+    history=models.CharField(max_length=600, null = True)
+    agent = models.ForeignKey(Agent,null = True)
+    event = models.ForeignKey(Event, null = True)
+    def __str__(self):
+        return self.ucid
+        
+        
+
+        
         

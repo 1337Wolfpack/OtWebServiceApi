@@ -12,7 +12,7 @@ class parseLog(threading.Thread):
     
         self.kill_received = False
         
-        self.LogFile = r'TelephonyServer_ccrcsl02.000'
+        self.LogFile = r'/media/callcenter/DIAGS/TelephonyServer_ccrcsl02.000'
         self.trackedEvents = []
         phoneLineState = "Up"
         self.dictActiveCalls = dict()
