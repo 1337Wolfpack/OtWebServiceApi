@@ -51,14 +51,8 @@ def handleRemoved(line, UCID):
         except ObjectDoesNotExist:    
             return False
         call.end = getDateFromLine(line)
-        call.save()
-            
-        if call.event != None:
-            #event = call.event
-            #event.end = call.end
-            call.state='ended'
-            #event.save()
-            call.save()                
+        call.state='ended'
+        call.save()                
 
         
         
