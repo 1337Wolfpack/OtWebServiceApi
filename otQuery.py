@@ -8,7 +8,6 @@ import platform
 import dateutil.parser
 import os
 
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "OtWebServiceApi.settings")
 import django
 django.setup()
@@ -17,18 +16,10 @@ config = Ot_config.objects.all()[0]
 url = config.url
 
 
-
 if platform.system() == "Windows":
     Encoding = "cp437"
 else:
     Encoding = "utf-8"
-    
-    
-
-
-
-
-
 
 class otQuery():
     def __init__(self):
@@ -168,7 +159,7 @@ class otQuery():
     def buildobjects(self, objectclass):
         results = []
         tree = ET.fromstring(self.xml_result)
-        print(self.xml_result)
+        #print(self.xml_result)
         root = tree \
             .find('*//{http://www.omninet.de/OtWebSvc/v1}GetObjectListResult')
         if root.attrib['success'] == "true":
@@ -223,12 +214,12 @@ class otQuery():
 
         tree = ET.fromstring(self.xml_result)
         root = tree.find('*//{http://www.omninet.de/OtWebSvc/v1}GetObjectListResult')
-        print("looking for property %s" % field)
+        #print("looking for property %s" % field)
         if root.attrib['success'] == "true":
             self.result = True
             root = root[0]
             properties = root.findall(".//*[@name='%s']" % field.name)
-            print(properties[0])
+            #print(properties[0])
             if len(properties) > 0:
 
                 return field.getValueFromXML(properties[0])
@@ -254,8 +245,8 @@ class otQuery():
         self.body = "%s</Object>" % (self.body)
         self.initQuery()
         self.sendQuery()
-        print(self.xml)
-        print(self.xml_result)
+        #print(self.xml)
+        #print(self.xml_result)
         tree = ET.fromstring(self.xml_result)
         root = tree\
             .find('*//{http://www.omninet.de/OtWebSvc/v1}ModifyObjectResult')

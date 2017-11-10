@@ -44,7 +44,7 @@ class Event(models.Model):
     state = models.CharField(max_length=200, null = True)
     origin = models.CharField(max_length=200, null = True)
     destination = models.CharField(max_length=200, null = True)
-    history = models.CharField(max_length=200, null = True)
+    history = models.CharField(max_length=600, null = True)
     start = models.DateTimeField(max_length=200, null = True)
     end = models.DateTimeField(max_length=200, null = True)
     ticket = models.ForeignKey(Ticket, null = True)
@@ -58,7 +58,7 @@ class Event(models.Model):
         return self.ucid
         
 class EventAdmin(admin.ModelAdmin):
-    list_display = ('ucid', 'origin', 'start', 'applicant', 'ot_id', 'event_type')  
+    list_display = ('ucid', 'origin', 'start', 'applicant', 'ot_id', 'event_type', 'history')  
 
 class Call(models.Model):
     ucid = models.CharField(max_length=200, unique=True)
@@ -68,13 +68,15 @@ class Call(models.Model):
     call_type = models.CharField(max_length=200,null = True)
     start = models.DateTimeField(max_length=200,null = True)
     end = models.DateTimeField(max_length=200,null = True)
+    isContactCenterCall=models.BooleanField(default=False)
     history=models.CharField(max_length=600, null = True)
     agent = models.ForeignKey(Agent,null = True)
     event = models.ForeignKey(Event, null = True)
     def __str__(self):
         return self.ucid
         
-        
+class CallAdmin(admin.ModelAdmin):
+    list_display = ('ucid', 'start', 'isContactCenterCall', 'history')  
 
         
         

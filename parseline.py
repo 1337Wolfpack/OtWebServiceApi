@@ -54,38 +54,40 @@ def handleRemoved(line, UCID):
         call.save()
             
         if call.event != None:
-            event = call.event
-            event.end = call.end
-            event.save()
-                
-            call.delete()
+            #event = call.event
+            #event.end = call.end
+            call.state='ended'
+            #event.save()
+            call.save()                
+
         
         
       
         
 def handleEstablished(line, UCID):
     if 'Established Event, UCID<' in line:
-       
         try:
-            call = Call.objects.get(ucid=UCID)
-            
-    
+            call = Call.objects.get(ucid=UCID)            
         except ObjectDoesNotExist:    
             linedate = getDateFromLine(line)
             call = Call()
-            print ("creating call %s" % UCID)
+            #print ("creating call %s" % UCID)
             call.start = linedate
             call.ucid = UCID
             call.save()
         call.state= 'established'        
         destination = getAnswererExt(line)
+        if destination in centrale:
+            call.agent = Agent.objects.get(displayname="Centrale")
+            call.isContactCenterCall = True
+            call.history = ""
+            call.save()
         if call.destination != destination:
             call.destination = destination
             if call.history == None:
                 call.history = destination
             else:
                 call.history = '%s -> %s' % (call.history , destination)
-            call.save()
             
         call.save()
         if destination in centrale:
@@ -103,56 +105,115 @@ def assignToAgent(call):
         except ObjectDoesNotExist:
             outsidehd = True
         call.save()
-    
-    
-    
-
-
         
+def handleRetrieved(line, UCID):
+    if 'Retrieved Event, UCID<' in line:
+        try:
+            call = Call.objects.get(ucid=UCID)
+        except ObjectDoesNotExist:
+            return False
+        call.state="established"
+        index = line.find('RetrievingDID:')
+        ext = line[index + 14:index + 17]
+        call.history = '%s -> %s' % (call.history, ext)
+        call.save()
+
+
+def handleConsult(line, UCID):
+    if 'Originated Event, UCID<%s' % UCID in line:
+        if 'LCS:Connected, Cause:Consultation' in line:
+            #print('found consultation %s' % line)
+            try:
+                call = Call.objects.get(ucid=UCID)
+            except ObjectDoesNotExist:
+                return False
+            index = line.find('CalledDID:')
+            ext = line[index + 10:index + 13]
+
+            try:
+                agent = Agent.objects.get(phone=ext)
+            except ObjectDoesNotExist:
+                return False
+            call.history = '%s -(Consult %s)' % (call.history , ext)
+            call.state='consulting'
+            call.save()
+           
+            #call.event.history = call.history
+                
+
+
 
 def saveEvent(line, UCID):
     try:
         call = Call.objects.get(ucid=UCID)
     except ObjectDoesNotExist:
         return False
-    if call.agent !=None:
-    
+    if call.agent !=None and call.isContactCenterCall:
+        
         if call.event == None and call.agent.is_helpdesk:
             try:
                 event = Event.objects.get(ucid=UCID)
             except ObjectDoesNotExist:
                 event = Event()
                 event.ucid = call.ucid
+                event.save()
+                call.event = event
+                call.save()
+        if call.event != None:
+            event = call.event
         
-            event.start = call.start
-            event.applicant = call.agent
-            event.destination = call.destination
-            event.origin = call.origin
-            event.event_type = call.call_type
-            event.history = call.history
-            event.save()
-            call.event = event
-            call.save()
             if event.ot_id != "":
                 ot_ev=otQuery().get(ot_event(), event.ot_id)
             else:
                 ot_ev = ot_event()
                 ot_ev.UCID = UCID
                 ot_ev.create()
-            
                 event.ot_id = ot_ev.id
                 event.save()
-            ot_ev.phone = event.origin
-            ot_ev.creationdate = event.start
-            ot_ev.transferhistory=event.history
-            ot_ev.applicant = event.applicant.login
-            
-            
-            
-
         
+            
+            if event.start != call.start:
+                event.start = call.start
+                ot_ev.creationdate = call.start
+                event.save()
+                
+            if event.applicant != call.agent:
+                event.applicant = call.agent
+                event.save()
+                ot_ev.applicant = event.applicant.login
+                
+            
+            if event.destination != call.destination:
+                event.destination = call.destination
+                event.save()
+            
+            if event.origin != call.origin:
+                event.origin = call.origin
+                event.save()
+                ot_ev.phone = event.origin
+                
 
-    
+            if event.end != call.end:
+                event.end = call.end
+                event.save()
+                if call.end !="":
+                    #print(call.end)
+                    ot_ev.enddate = call.end
+            
+                
+            if event.event_type != call.call_type:
+                event.event_type != call.call_type
+                
+            if event.history != call.history:
+                event.history = call.history
+                event.save()
+                ot_ev.transferhistory=event.history
+                
+            event.save()
+            call.event = event
+            call.save()
+           
+            
 def getCallType(line):
     index = line.find('CallTypeName:')
     callType= ""
@@ -201,9 +262,10 @@ def parseline(line):
     if UCID != '0':
         handleEstablished(line, UCID)
         getDetails(line, UCID)
-        saveEvent(line, UCID)
+        handleConsult(line, UCID)
+        handleRetrieved(line, UCID)
         handleRemoved(line, UCID)
-
+        saveEvent(line, UCID)
         #handleDetailsFound(line, UCID)
 
     

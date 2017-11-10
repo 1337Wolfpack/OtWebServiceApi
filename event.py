@@ -15,7 +15,7 @@ class event(object):
         self._transferhistory = StringVal('TransferHistory')
         self.createdindatabase=False
         
-   
+ 
     
     def create(self):
         self.id = otQuery()\
