@@ -76,7 +76,7 @@ class Call(models.Model):
         return self.ucid
         
 class CallAdmin(admin.ModelAdmin):
-    list_display = ('ucid', 'start', 'isContactCenterCall', 'history')  
+    list_display = ('ucid', 'start', 'isContactCenterCall', 'history', 'end')  
 
         
         
