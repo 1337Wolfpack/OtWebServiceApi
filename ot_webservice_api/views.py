@@ -8,7 +8,7 @@ def index(request):
     Agents = Agent.objects.filter(is_helpdesk=True,active=True)
     FreeAgents = []
     busyExt= []
-    html = "<html><body><table>"    
+    html = "<html><script>setTimeout(function(){ location.reload(); }, 1000);</script><body><table>"    
     for call in activeCalls:
         busyExt.append(call.destination)
         busyExt.append(call.origin)
